@@ -3,7 +3,7 @@ const cheerio = require('cheerio');
 const { createClient } = require('@supabase/supabase-js');
 const puppeteer = require('puppeteer');
 
-// Configuração do Supabase usando as variáveis de ambiente do GitHub Secrets
+// Configuração do Supabase
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 
 const loteriasParaScrapear = [
@@ -29,16 +29,14 @@ async function scrapeBichoCerto(loteriaInfo) {
         });
         const page = await browser.newPage();
         await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36');
-        
         await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
         const html = await page.content();
         await browser.close();
 
         const $ = cheerio.load(html);
         const resultadosDaPagina = [];
-        const dataSorteio = new Date(); // Data atual da raspagem
+        const dataSorteio = new Date();
 
-        // Seleciona os blocos de resultados (pode variar conforme o layout do site)
         const items = $('div.col-lg-4.mb-4').length ? $('div.col-lg-4.mb-4') : $('article.result');
 
         items.each((index, element) => {
@@ -48,10 +46,75 @@ async function scrapeBichoCerto(loteriaInfo) {
             const horario = horarioMatch ? horarioMatch[0].replace('h', ':00') : 'N/A';
 
             item.find('table tbody tr, .result-group-item').each((i, row) => {
-                if (i >= 7) return false; // Pega apenas do 1º ao 7º prêmio
-
+                if (i >= 7) return false;
                 const tds = $(row).find('td');
                 let posicao, milhar, grupo, bicho;
 
                 if (tds.length >= 4) {
-                    posicao = $(tds
+                    posicao = $(tds[0]).text().trim();
+                    milhar = $(tds[1]).text().trim();
+                    grupo = $(tds[2]).text().trim();
+                    bicho = $(tds[3]).text().trim();
+
+                    if (milhar && !isNaN(parseInt(grupo))) {
+                        resultadosDaPagina.push({ 
+                            loteria: nome, 
+                            horario, 
+                            bicho, 
+                            grupo: parseInt(grupo), 
+                            milhar, 
+                            posicao,
+                            data_sorteio: dataSorteio.toISOString() 
+                        });
+                    }
+                }
+            });
+        });
+        return resultadosDaPagina;
+    } catch (error) {
+        console.error(`Erro em ${nome}: ${error.message}`);
+        if (browser) await browser.close();
+        return [];
+    }
+}
+
+async function rodarProcessoDeScraping() {
+    try {
+        console.log("=== INICIANDO PROCESSO ===");
+        
+        // 1. Limpeza de 30 dias
+        const limite = new Date();
+        limite.setDate(limite.getDate() - 30);
+        console.log(`Limpando dados anteriores a: ${limite.toISOString()}`);
+        await supabase.from('resultados').delete().lt('data_sorteio', limite.toISOString());
+
+        // 2. Filtro de Loterias (Federal apenas quarta e sábado)
+        const hoje = new Date().getDay();
+        const loteriasParaHoje = loteriasParaScrapear.filter(l => l.nome !== 'FEDERAL' || (hoje === 3 || hoje === 6));
+
+        // 3. Execução do Scraping
+        let todosOsResultados = [];
+        for (const loteria of loteriasParaHoje) {
+            const resultados = await scrapeBichoCerto(loteria);
+            todosOsResultados.push(...resultados);
+        }
+
+        console.log(`Total encontrado: ${todosOsResultados.length}`);
+
+        // 4. Salvar no Supabase
+        if (todosOsResultados.length > 0) {
+            const { error } = await supabase.from('resultados').upsert(todosOsResultados, { 
+                onConflict: 'loteria,horario,posicao,data_sorteio' 
+            });
+            if (error) console.error("Erro Supabase:", error.message);
+            else console.log("SUCESSO: Dados salvos!");
+        } else {
+            console.log("AVISO: Nenhum dado encontrado.");
+        }
+    } catch (e) { 
+        console.error("ERRO FATAL:", e.message); 
+        process.exit(1); 
+    }
+}
+
+rodarProcessoDeScraping();
