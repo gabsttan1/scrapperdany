@@ -33,7 +33,6 @@ async function scrapeBichoCerto(loteriaInfo) {
         const resultadosDaPagina = [];
         const dataHoje = new Date().toISOString().split('T')[0];
 
-        // Seleciona os blocos de resultados
         const items = $('div.col-lg-4.mb-4, article.result, .result-card');
 
         items.each((index, element) => {
@@ -48,34 +47,36 @@ async function scrapeBichoCerto(loteriaInfo) {
                 if (i >= 7) return false;
                 const tds = $(row).find('td');
                 
-                let posicao, milhar, grupo, bicho;
+                let posicao = "N/A", milhar = "", grupo = "", bicho = "";
 
-                // AJUSTE DE MAPEAMENTO: Corrigindo a ordem das colunas baseada na estrutura do site
                 if (tds.length >= 4) {
                     posicao = $(tds[0]).text().trim();
-                    // No site, geralmente a ordem é: Posicao | Premio (Milhar) | Grupo | Bicho
-                    milhar = $(tds[1]).text().trim().replace('.', ''); 
-                    grupo = $(tds[2]).text().trim();
-                    bicho = $(tds[3]).text().trim();
-                } else {
-                    // Fallback para layout estilo lista (Nacional)
-                    posicao = $(row).find('.prize').text().trim();
-                    milhar = $(row).find('.number').text().trim().replace('.', '');
-                    const animalText = $(row).find('.animal-name').text().trim();
-                    const grupoMatch = animalText.match(/\((\d+)\)/);
-                    if (grupoMatch) {
-                        grupo = grupoMatch[1];
-                        bicho = animalText.replace(/\(\d+\)\s*/, '').trim();
-                    }
+                    
+                    // LÓGICA DE DETECÇÃO INTELIGENTE
+                    // Percorre as colunas para identificar qual é a milhar (3 ou 4 dígitos)
+                    tds.each((idx, td) => {
+                        const texto = $(td).text().trim().replace('.', '');
+                        if (texto.length >= 3 && texto.length <= 4 && !isNaN(texto)) {
+                            milhar = texto;
+                            // O grupo costuma ser a próxima coluna ou a anterior
+                            const possivelGrupo = $(tds[idx + 1]).text().trim();
+                            if (possivelGrupo.length <= 2 && !isNaN(possivelGrupo)) {
+                                grupo = possivelGrupo;
+                            }
+                        }
+                    });
+                    
+                    bicho = $(tds[tds.length - 1]).text().trim();
                 }
 
-                if (milhar !== "" && grupo !== "" && !isNaN(parseInt(grupo))) {
+                // Validação final para garantir que nada vá trocado
+                if (milhar !== "" && grupo !== "") {
                     resultadosDaPagina.push({ 
                         loteria: nome, 
                         horario, 
                         posicao,
-                        milhar: String(milhar), // Agora salva na coluna correta (Text) para manter o zero
-                        grupo: parseInt(grupo),  // Agora salva o número do grupo (1-25)
+                        milhar: String(milhar).padStart(4, '0'), // Garante 4 dígitos (ex: 0681)
+                        grupo: parseInt(grupo), 
                         bicho,
                         data_sorteio: dataHoje 
                     });
@@ -91,6 +92,7 @@ async function scrapeBichoCerto(loteriaInfo) {
 
 async function rodar() {
     try {
+        console.log("=== INICIANDO ===");
         const limite = new Date();
         limite.setDate(limite.getDate() - 30);
         await supabase.from('resultados').delete().lt('data_sorteio', limite.toISOString().split('T')[0]);
@@ -106,7 +108,7 @@ async function rodar() {
                 onConflict: 'loteria,horario,posicao,data_sorteio' 
             });
             if (error) console.error("Erro:", error.message);
-            else console.log("SUCESSO: Colunas corrigidas e dados salvos!");
+            else console.log("SUCESSO: Dados corrigidos e salvos!");
         }
     } catch (e) { console.error(e.message); }
 }
