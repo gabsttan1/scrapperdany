@@ -31,7 +31,7 @@ async function scrapeBichoCerto(loteriaInfo) {
 
         const $ = cheerio.load(html);
         const resultadosDaPagina = [];
-        const dataHoje = new Date().toISOString().split('T')[0]; // Data limpa: YYYY-MM-DD
+        const dataHoje = new Date().toISOString().split('T')[0];
 
         const items = $('div.col-lg-4.mb-4').length ? $('div.col-lg-4.mb-4') : $('article.result');
 
@@ -47,12 +47,14 @@ async function scrapeBichoCerto(loteriaInfo) {
                 if (tds.length >= 4) {
                     const milhar = $(tds[1]).text().trim();
                     const grupo = $(tds[2]).text().trim();
-                    if (milhar && !isNaN(parseInt(grupo))) {
+                    
+                    // CORREÇÃO: Verifica se milhar não é string vazia, permitindo o valor "0"
+                    if (milhar !== "" && !isNaN(parseInt(grupo))) {
                         resultadosDaPagina.push({ 
                             loteria: nome, 
                             horario, 
                             posicao: $(tds[0]).text().trim(),
-                            milhar, 
+                            milhar: milhar, // Mantém como string para preservar os zeros à esquerda (ex: 0123)
                             grupo: parseInt(grupo), 
                             bicho: $(tds[3]).text().trim(),
                             data_sorteio: dataHoje 
@@ -71,15 +73,14 @@ async function scrapeBichoCerto(loteriaInfo) {
 async function rodar() {
     try {
         console.log("=== INICIANDO ===");
-        // Limpeza: Remove dados com mais de 30 dias
         const limite = new Date();
         limite.setDate(limite.getDate() - 30);
         await supabase.from('resultados').delete().lt('data_sorteio', limite.toISOString().split('T')[0]);
 
         let todos = [];
         for (const l of loteriasParaScrapear) {
-            const res = await scrapeBichoCerto(l);
-            todos.push(...res);
+            const r = await scrapeBichoCerto(l);
+            todos.push(...r);
         }
 
         if (todos.length > 0) {
