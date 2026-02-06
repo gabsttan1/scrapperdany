@@ -101,15 +101,20 @@ async function rodarProcessoDeScraping() {
 
         console.log(`Total encontrado: ${todosOsResultados.length}`);
 
-        // 4. Salvar no Supabase
+        // 4. Salvar no Supabase (Upsert com tratamento de conflito)
         if (todosOsResultados.length > 0) {
             const { error } = await supabase.from('resultados').upsert(todosOsResultados, { 
                 onConflict: 'loteria,horario,posicao,data_sorteio' 
             });
-            if (error) console.error("Erro Supabase:", error.message);
-            else console.log("SUCESSO: Dados salvos!");
+
+            if (error) {
+                console.error("Erro detalhado do Supabase:", error.message);
+                console.log("Dica: Certifique-se de que o índice único foi criado corretamente no SQL Editor.");
+            } else {
+                console.log("SUCESSO: Dados gravados e duplicados evitados!");
+            }
         } else {
-            console.log("AVISO: Nenhum dado encontrado.");
+            console.log("AVISO: Nenhum dado encontrado para salvar.");
         }
     } catch (e) { 
         console.error("ERRO FATAL:", e.message); 
