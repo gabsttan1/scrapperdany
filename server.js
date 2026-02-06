@@ -3,7 +3,7 @@ const cheerio = require('cheerio');
 const { createClient } = require('@supabase/supabase-js');
 const puppeteer = require('puppeteer');
 
-// Configuração do Supabase
+// Configuração do cliente Supabase usando variáveis de ambiente
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 
 const loteriasParaScrapear = [
@@ -29,13 +29,14 @@ async function scrapeBichoCerto(loteriaInfo) {
         });
         const page = await browser.newPage();
         await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36');
+        
         await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
         const html = await page.content();
         await browser.close();
 
         const $ = cheerio.load(html);
         const resultadosDaPagina = [];
-        const dataSorteio = new Date();
+        const dataSorteio = new Date(); // Data e hora atual da captura
 
         const items = $('div.col-lg-4.mb-4').length ? $('div.col-lg-4.mb-4') : $('article.result');
 
@@ -46,7 +47,8 @@ async function scrapeBichoCerto(loteriaInfo) {
             const horario = horarioMatch ? horarioMatch[0].replace('h', ':00') : 'N/A';
 
             item.find('table tbody tr, .result-group-item').each((i, row) => {
-                if (i >= 7) return false;
+                if (i >= 7) return false; // Limita aos 7 primeiros prêmios
+
                 const tds = $(row).find('td');
                 let posicao, milhar, grupo, bicho;
 
@@ -70,6 +72,7 @@ async function scrapeBichoCerto(loteriaInfo) {
                 }
             });
         });
+
         return resultadosDaPagina;
     } catch (error) {
         console.error(`Erro em ${nome}: ${error.message}`);
@@ -81,18 +84,24 @@ async function scrapeBichoCerto(loteriaInfo) {
 async function rodarProcessoDeScraping() {
     try {
         console.log("=== INICIANDO PROCESSO ===");
-        
-        // 1. Limpeza de 30 dias
+
+        // 1. LIMPEZA: Remove dados com mais de 30 dias
         const limite = new Date();
         limite.setDate(limite.getDate() - 30);
         console.log(`Limpando dados anteriores a: ${limite.toISOString()}`);
-        await supabase.from('resultados').delete().lt('data_sorteio', limite.toISOString());
+        
+        await supabase
+            .from('resultados')
+            .delete()
+            .lt('data_sorteio', limite.toISOString());
 
-        // 2. Filtro de Loterias (Federal apenas quarta e sábado)
-        const hoje = new Date().getDay();
-        const loteriasParaHoje = loteriasParaScrapear.filter(l => l.nome !== 'FEDERAL' || (hoje === 3 || hoje === 6));
+        // 2. FILTRO: Define quais loterias rodam hoje (Federal apenas Qua e Sáb)
+        const diaSemana = new Date().getDay();
+        const loteriasParaHoje = loteriasParaScrapear.filter(l => 
+            l.nome !== 'FEDERAL' || (diaSemana === 3 || diaSemana === 6)
+        );
 
-        // 3. Execução do Scraping
+        // 3. EXECUÇÃO: Percorre as URLs e raspa os dados
         let todosOsResultados = [];
         for (const loteria of loteriasParaHoje) {
             const resultados = await scrapeBichoCerto(loteria);
@@ -101,25 +110,6 @@ async function rodarProcessoDeScraping() {
 
         console.log(`Total encontrado: ${todosOsResultados.length}`);
 
-        // 4. Salvar no Supabase (Upsert com tratamento de conflito)
+        // 4. SALVAMENTO (UPSERT): Insere novos ou atualiza existentes baseado no índice único
         if (todosOsResultados.length > 0) {
-            const { error } = await supabase.from('resultados').upsert(todosOsResultados, { 
-                onConflict: 'loteria,horario,posicao,data_sorteio' 
-            });
-
-            if (error) {
-                console.error("Erro detalhado do Supabase:", error.message);
-                console.log("Dica: Certifique-se de que o índice único foi criado corretamente no SQL Editor.");
-            } else {
-                console.log("SUCESSO: Dados gravados e duplicados evitados!");
-            }
-        } else {
-            console.log("AVISO: Nenhum dado encontrado para salvar.");
-        }
-    } catch (e) { 
-        console.error("ERRO FATAL:", e.message); 
-        process.exit(1); 
-    }
-}
-
-rodarProcessoDeScraping();
+            const { error } = await supabase
