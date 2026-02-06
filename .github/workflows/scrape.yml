@@ -1,0 +1,30 @@
+name: Rodar Scraper de Resultados
+
+on:
+  schedule:
+    - cron: '30 10,12,14,17,19,21,0,2 * * *' # Exemplo simplificado de horários
+  workflow_dispatch: # Permite rodar manualmente
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar Chrome
+        uses: browser-actions/setup-chrome@v1
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Instalar dependências
+        run: npm install
+
+      - name: Executar Scraper
+        run: node server.js
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
