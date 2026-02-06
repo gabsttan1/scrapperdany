@@ -3,7 +3,7 @@ const cheerio = require('cheerio');
 const { createClient } = require('@supabase/supabase-js');
 const puppeteer = require('puppeteer');
 
-// Configuração do cliente Supabase
+// Configuração do Supabase
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 
 const loteriasParaScrapear = [
@@ -76,16 +76,13 @@ async function rodarProcessoDeScraping() {
     try {
         console.log("=== INICIANDO PROCESSO ===");
         
-        // 1. Limpeza de 30 dias
         const limite = new Date();
         limite.setDate(limite.getDate() - 30);
         await supabase.from('resultados').delete().lt('data_sorteio', limite.toISOString());
 
-        // 2. Filtro Federal
         const hoje = new Date().getDay();
         const loteriasParaHoje = loteriasParaScrapear.filter(l => l.nome !== 'FEDERAL' || (hoje === 3 || hoje === 6));
 
-        // 3. Scraping
         let todos = [];
         for (const loteria of loteriasParaHoje) {
             const res = await scrapeBichoCerto(loteria);
@@ -94,13 +91,15 @@ async function rodarProcessoDeScraping() {
 
         console.log(`Total encontrado: ${todos.length}`);
 
-        // 4. Upsert
         if (todos.length > 0) {
             const { error } = await supabase.from('resultados').upsert(todos, { 
                 onConflict: 'loteria,horario,posicao,data_sorteio' 
             });
-            if (error) console.error("Erro Supabase:", error.message);
-            else console.log("SUCESSO: Dados salvos!");
+            if (error) {
+                console.error("Erro Supabase:", error.message);
+            } else {
+                console.log("SUCESSO: Dados salvos!");
+            }
         }
     } catch (e) {
         console.error("ERRO FATAL:", e.message);
