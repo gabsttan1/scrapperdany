@@ -2,28 +2,95 @@ name: Rodar Scraper de Resultados
 
 on:
   schedule:
-    - cron: '30 10,12,14,17,19,21,0,2 * * *' # Exemplo simplificado de horários
-  workflow_dispatch: # Permite rodar manualmente
+    # --- LOOK ---
+    - cron: '30 10 * * *' # 07:30 BRT
+    - cron: '30 12 * * *' # 09:30 BRT
+    - cron: '30 14 * * *' # 11:30 BRT
+    - cron: '30 17 * * *' # 14:30 BRT
+    - cron: '30 19 * * *' # 16:30 BRT
+    - cron: '30 21 * * *' # 18:30 BRT
+    - cron: '30 0 * * *'  # 21:30 BRT
+    - cron: '30 2 * * *'  # 23:30 BRT
+
+    # --- RIO ---
+    - cron: '40 12 * * *' # 09:40 BRT
+    - cron: '40 14 * * *' # 11:40 BRT
+    - cron: '40 17 * * *' # 14:40 BRT
+    - cron: '40 19 * * *' # 16:40 BRT
+    - cron: '40 21 * * *' # 18:40 BRT
+    - cron: '40 0 * * *'  # 21:40 BRT
+
+    # --- NACIONAL ---
+    - cron: '0 5 * * *'   # 02:00 BRT
+    - cron: '0 11 * * *'  # 08:00 BRT
+    - cron: '0 15 * * *'  # 12:00 BRT
+    - cron: '0 18 * * *'  # 15:00 BRT
+    - cron: '0 20 * * *'  # 17:00 BRT
+    - cron: '0 23 * * *'  # 20:00 BRT
+    - cron: '0 2 * * *'   # 23:00 BRT
+
+    # --- MALUCA ---
+    - cron: '5 13 * * *'   # 10:05 BRT
+    - cron: '5 15 * * *'   # 12:05 BRT
+    - cron: '5 18 * * *'   # 15:05 BRT
+    - cron: '5 22 * * *'   # 19:05 BRT
+    - cron: '25 0 * * *'   # 21:25 BRT
+
+    # --- LOTECE ---
+    - cron: '5 14 * * *'   # 11:05 BRT
+    - cron: '5 17 * * *'   # 14:05 BRT
+    
+    # --- LOTEP ---
+    - cron: '5 12 * * *'   # 09:05 BRT
+    - cron: '50 13 * * *'  # 10:50 BRT
+    - cron: '50 15 * * *'  # 12:50 BRT
+    - cron: '50 18 * * *'  # 15:50 BRT
+    - cron: '50 21 * * *'  # 18:50 BRT
+    - cron: '5 23 * * *'   # 20:05 BRT
+
+    # --- SP/BAND ---
+    - cron: '25 11 * * *'  # 08:25 BRT
+    - cron: '45 13 * * *'  # 10:45 BRT
+    - cron: '25 15 * * *'  # 12:25 BRT
+    - cron: '45 16 * * *'  # 13:45 BRT
+    - cron: '35 18 * * *'  # 15:35 BRT
+    - cron: '45 20 * * *'  # 17:45 BRT
+    - cron: '25 22 * * *'  # 19:25 BRT
+    - cron: '45 23 * * *'  # 20:45 BRT
+
+    # --- LBR ---
+    - cron: '45 11 * * *'  # 08:45 BRT
+    - cron: '35 13 * * *'  # 10:35 BRT
+    - cron: '35 20 * * *'  # 17:35 BRT
+    - cron: '35 22 * * *'  # 19:35 BRT
+    - cron: '35 1 * * *'   # 22:35 BRT
+    - cron: '45 2 * * *'   # 23:45 BRT
+
+    # --- FEDERAL ---
+    - cron: '10 22 * * 3' # Quartas às 19:10 BRT
+    - cron: '10 22 * * 6' # Sábados às 19:10 BRT
+
+  workflow_dispatch: # Permite execução manual
 
 jobs:
   scrape:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout do código
+      - name: 1. Checkout do código
         uses: actions/checkout@v4
 
-      - name: Configurar Chrome
+      - name: 2. Configurar o Navegador (Chrome)
         uses: browser-actions/setup-chrome@v1
 
-      - name: Configurar Node.js
+      - name: 3. Configurar o Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Instalar dependências
+      - name: 4. Instalar as dependências
         run: npm install
 
-      - name: Executar Scraper
+      - name: 5. Executar o Scraper
         run: node server.js
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
