@@ -21,9 +21,9 @@ const loteriasParaScrapear = [
 
 async function scrapeBichoCerto(loteriaInfo) {
     const { nome, url } = loteriaInfo;
+    console.log(`- Raspando: ${nome}`);
     let browser = null;
     try {
-        console.log(`- Raspando: ${nome}`);
         browser = await puppeteer.launch({ headless: "new", args: ['--no-sandbox', '--disable-setuid-sandbox'] });
         const page = await browser.newPage();
         await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36');
@@ -35,44 +35,27 @@ async function scrapeBichoCerto(loteriaInfo) {
         const resultadosDaPagina = [];
         const dataHoje = new Date().toISOString().split('T')[0];
 
-        const items = $('div.col-lg-4.mb-4, article.result, .result-card');
-
-        items.each((index, element) => {
-            const item = $(element);
-            const titulo = item.find('h5.card-title, header h3, .card-header').first().text().trim();
+        // Seleciona os blocos de resultados (os cards)
+        $('div[id^="div_display_"]').each((index, container) => {
+            const titulo = $(container).find('.card-title').first().text().trim();
             const horarioMatch = titulo.match(/(\d{1,2}:\d{2})/) || titulo.match(/(\d{1,2}h)/);
             const horario = horarioMatch ? horarioMatch[0].replace('h', ':00') : 'N/A';
 
-            const rows = item.find('table tbody tr, .result-group-item');
-            
-            rows.each((i, row) => {
-                if (i >= 7) return false;
+            $(container).find('table tbody tr').each((i, row) => {
                 const tds = $(row).find('td');
-                
-                let posicao = "N/A", milhar = "", grupo = "", bicho = "";
+                if (tds.length < 4) return;
 
-                if (tds.length >= 4) {
-                    posicao = $(tds[0]).text().trim();
-                    
-                    tds.each((idx, td) => {
-                        const texto = $(td).text().trim().replace('.', '');
-                        if (texto.length >= 3 && texto.length <= 4 && !isNaN(texto)) {
-                            milhar = texto;
-                            const possivelGrupo = $(tds[idx + 1]).text().trim();
-                            if (possivelGrupo.length <= 2 && !isNaN(possivelGrupo)) {
-                                grupo = possivelGrupo;
-                            }
-                        }
-                    });
-                    bicho = $(tds[tds.length - 1]).text().trim();
-                }
+                const posicao = $(tds[0]).text().trim();
+                const milhar = $(tds[2]).find('a').text().trim().replace('.', '');
+                const grupo = $(tds[3]).text().trim();
+                const bicho = $(tds[4]).text().trim();
 
-                if (milhar !== "" && grupo !== "") {
+                if (!isNaN(milhar) && milhar.length >= 3) {
                     resultadosDaPagina.push({ 
                         loteria: nome, 
                         horario: horario, 
                         posicao: posicao,
-                        // Adicionamos o apóstrofo aqui para forçar o formato de texto no Sheets
+                        // Apóstrofo força texto no Sheets, mantendo o zero inicial
                         milhar: "'" + String(milhar).padStart(4, '0'), 
                         grupo: parseInt(grupo), 
                         bicho: bicho,
@@ -97,7 +80,8 @@ async function rodar() {
         }
 
         if (todos.length > 0) {
-            console.log(`Enviando ${todos.length} resultados para o Sheets...`);
+            console.log(`Raspagem concluída. Total capturado: ${todos.length}. Verificando duplicados...`);
+            
             const serviceAccountAuth = new JWT({
                 email: SERVICE_ACCOUNT_EMAIL,
                 key: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON).private_key,
@@ -107,8 +91,25 @@ async function rodar() {
             const doc = new GoogleSpreadsheet(SPREADSHEET_ID, serviceAccountAuth);
             await doc.loadInfo();
             const sheet = doc.sheetsByIndex[0];
-            await sheet.addRows(todos);
-            console.log("SUCESSO: Dados salvos!");
+            
+            // Pega as linhas existentes para filtrar duplicados
+            const rows = await sheet.getRows();
+            const existingKeys = new Set(rows.map(r => 
+                `${r.get('loteria')}-${r.get('horario')}-${r.get('posicao')}-${r.get('data_sorteio')}`
+            ));
+
+            // Filtra o que é novo
+            const toAdd = todos.filter(novo => {
+                const key = `${novo.loteria}-${novo.horario}-${novo.posicao}-${novo.data_sorteio}`;
+                return !existingKeys.has(key);
+            });
+
+            if (toAdd.length > 0) {
+                await sheet.addRows(toAdd);
+                console.log(`SUCESSO: ${toAdd.length} novos resultados adicionados.`);
+            } else {
+                console.log("Nenhum dado novo encontrado (todos já estavam na planilha).");
+            }
         }
     } catch (e) { console.error("Erro final:", e.message); }
 }
