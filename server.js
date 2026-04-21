@@ -2,6 +2,7 @@ require('dotenv').config();
 const cheerio = require('cheerio');
 const { createClient } = require('@supabase/supabase-js');
 const puppeteer = require('puppeteer');
+const axios = require('axios');
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 
@@ -19,96 +20,60 @@ const loteriasParaScrapear = [
 
 async function scrapeBichoCerto(loteriaInfo) {
     const { nome, url } = loteriaInfo;
-    let browser = null;
-    try {
-        console.log(`- Raspando: ${nome}`);
-        browser = await puppeteer.launch({ headless: "new", args: ['--no-sandbox', '--disable-setuid-sandbox'] });
-        const page = await browser.newPage();
-        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36');
-        await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
-        const html = await page.content();
-        await browser.close();
+    let browser = await puppeteer.launch({ headless: "new", args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+    const page = await browser.newPage();
+    await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
+    const html = await page.content();
+    await browser.close();
 
-        const $ = cheerio.load(html);
-        const resultadosDaPagina = [];
-        const dataHoje = new Date().toISOString().split('T')[0];
+    const $ = cheerio.load(html);
+    const results = [];
+    const dataHoje = new Date().toISOString().split('T')[0];
 
-        const items = $('div.col-lg-4.mb-4, article.result, .result-card');
+    $('table tbody tr, .result-group-item').each((i, row) => {
+        if (i >= 7) return false;
+        
+        const tds = $(row).find('td, div');
+        let posicao = "N/A", milhar = "", grupo = "", bicho = "";
 
-        items.each((index, element) => {
-            const item = $(element);
-            const titulo = item.find('h5.card-title, header h3, .card-header').first().text().trim();
-            const horarioMatch = titulo.match(/(\d{1,2}:\d{2})/) || titulo.match(/(\d{1,2}h)/);
-            const horario = horarioMatch ? horarioMatch[0].replace('h', ':00') : 'N/A';
-
-            const rows = item.find('table tbody tr, .result-group-item');
-            
-            rows.each((i, row) => {
-                if (i >= 7) return false;
-                const tds = $(row).find('td');
-                
-                let posicao = "N/A", milhar = "", grupo = "", bicho = "";
-
-                if (tds.length >= 4) {
-                    posicao = $(tds[0]).text().trim();
-                    
-                    // LÓGICA DE DETECÇÃO INTELIGENTE
-                    // Percorre as colunas para identificar qual é a milhar (3 ou 4 dígitos)
-                    tds.each((idx, td) => {
-                        const texto = $(td).text().trim().replace('.', '');
-                        if (texto.length >= 3 && texto.length <= 4 && !isNaN(texto)) {
-                            milhar = texto;
-                            // O grupo costuma ser a próxima coluna ou a anterior
-                            const possivelGrupo = $(tds[idx + 1]).text().trim();
-                            if (possivelGrupo.length <= 2 && !isNaN(possivelGrupo)) {
-                                grupo = possivelGrupo;
-                            }
-                        }
-                    });
-                    
-                    bicho = $(tds[tds.length - 1]).text().trim();
-                }
-
-                // Validação final para garantir que nada vá trocado
-                if (milhar !== "" && grupo !== "") {
-                    resultadosDaPagina.push({ 
-                        loteria: nome, 
-                        horario, 
-                        posicao,
-                        milhar: String(milhar).padStart(4, '0'), // Garante 4 dígitos (ex: 0681)
-                        grupo: parseInt(grupo), 
-                        bicho,
-                        data_sorteio: dataHoje 
-                    });
-                }
-            });
+        tds.each((idx, el) => {
+            const txt = $(el).text().trim().replace('.', '');
+            // Se tem 3 ou 4 dígitos -> Milhar
+            if (txt.length >= 3 && txt.length <= 4 && !isNaN(txt)) milhar = txt.padStart(4, '0');
+            // Se tem 1 ou 2 dígitos -> Grupo
+            else if (txt.length <= 2 && !isNaN(txt)) grupo = txt;
+            // Se é texto -> Bicho
+            else if (isNaN(txt) && txt.length > 3) bicho = txt;
+            else if (idx === 0) posicao = txt;
         });
-        return resultadosDaPagina;
-    } catch (error) {
-        if (browser) await browser.close();
-        return [];
-    }
+
+        if (milhar !== "" && grupo !== "") {
+            results.push({ 
+                loteria: nome, 
+                horario: "N/A", 
+                posicao, 
+                milhar, 
+                grupo: parseInt(grupo), 
+                bicho, 
+                data_sorteio: dataHoje 
+            });
+        }
+    });
+    return results;
 }
 
 async function rodar() {
     try {
-        console.log("=== INICIANDO ===");
-        const limite = new Date();
-        limite.setDate(limite.getDate() - 30);
-        await supabase.from('resultados').delete().lt('data_sorteio', limite.toISOString().split('T')[0]);
-
         let todos = [];
-        for (const l of loteriasParaScrapear) {
-            const res = await scrapeBichoCerto(l);
-            todos.push(...res);
-        }
+        for (const l of loteriasParaScrapear) todos.push(...await scrapeBichoCerto(l));
 
         if (todos.length > 0) {
-            const { error } = await supabase.from('resultados').upsert(todos, { 
-                onConflict: 'loteria,horario,posicao,data_sorteio' 
-            });
-            if (error) console.error("Erro:", error.message);
-            else console.log("SUCESSO: Dados corrigidos e salvos!");
+            await supabase.from('resultados').upsert(todos, { onConflict: 'loteria,horario,posicao,data_sorteio' });
+            
+            // COLE AQUI SEU WEBHOOK:
+            const WEBHOOK = 'https://hook.us2.make.com/ee4umw7oa8p4hwgob4kqlpvqxy7bxdh4';
+            if (WEBHOOK.startsWith('http')) await axios.post(WEBHOOK, todos);
+            console.log("Sucesso!");
         }
     } catch (e) { console.error(e.message); }
 }
