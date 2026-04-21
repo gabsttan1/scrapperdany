@@ -1,11 +1,10 @@
-require('dotenv').config();
 const cheerio = require('cheerio');
 const puppeteer = require('puppeteer');
 const { GoogleSpreadsheet } = require('google-spreadsheet');
 const { JWT } = require('google-auth-library');
 
-// CONFIGURAÇÃO DO GOOGLE SHEETS
-const SPREADSHEET_ID = '1yh7an-SMWRbHSpRX1BzNnaarV1abfZeRXiAlNDN-nsk'; 
+// CONFIGURAÇÃO
+const SPREADSHEET_ID = '1yh7an-SMWRbHSpRX1BzNnaarV1abfZeRXiAlNDN-nsk'; // COLOQUE O SEU ID AQUI
 const SERVICE_ACCOUNT_EMAIL = 'resultados-sheets@sheets-494017.iam.gserviceaccount.com';
 
 const loteriasParaScrapear = [
@@ -22,7 +21,6 @@ const loteriasParaScrapear = [
 
 async function scrapeBichoCerto(loteriaInfo) {
     const { nome, url } = loteriaInfo;
-    console.log(`--- Raspando: ${nome} ---`);
     let browser;
     try {
         browser = await puppeteer.launch({ headless: "new", args: ['--no-sandbox', '--disable-setuid-sandbox'] });
@@ -36,19 +34,30 @@ async function scrapeBichoCerto(loteriaInfo) {
         const results = [];
         const dataHoje = new Date().toISOString().split('T')[0];
 
-        const container = $('.result-card, .result-item, table'); 
-        container.each((index, element) => {
-            const rows = $(element).find('tr, .result-group-item');
-            rows.each((i, row) => {
-                const tds = $(row).find('td, div');
-                let milhar = "", grupo = "";
-                tds.each((idx, td) => {
-                    const txt = $(td).text().trim().replace('.', '');
-                    if (txt.length >= 3 && txt.length <= 4 && !isNaN(txt)) milhar = txt.padStart(4, '0');
-                    else if (txt.length <= 2 && !isNaN(txt)) grupo = txt;
-                });
-                if (milhar && grupo) {
-                    results.push({ loteria: nome, milhar, grupo, data: dataHoje });
+        // Procura tabelas de resultados
+        $('table').each((index, table) => {
+            $(table).find('tr').each((i, row) => {
+                const tds = $(row).find('td');
+                if (tds.length < 3) return; // Pula cabeçalhos ou linhas vazias
+
+                let posicao = $(tds[0]).text().trim();
+                let milhar = $(tds[1]).text().trim().replace('.', '');
+                let grupo = $(tds[2]).text().trim();
+                let bicho = tds.length > 3 ? $(tds[3]).text().trim() : "";
+
+                // Limpeza básica
+                milhar = milhar.padStart(4, '0');
+                
+                // Valida se é um resultado real
+                if (!isNaN(milhar) && milhar.length === 4) {
+                    results.push({ 
+                        loteria: nome, 
+                        posicao: posicao, 
+                        milhar: milhar, 
+                        grupo: grupo, 
+                        bicho: bicho, 
+                        data_sorteio: dataHoje 
+                    });
                 }
             });
         });
@@ -66,8 +75,6 @@ async function rodar() {
     }
 
     if (todos.length > 0) {
-        console.log(`Enviando ${todos.length} resultados para o Google Sheets...`);
-        
         try {
             const serviceAccountAuth = new JWT({
                 email: SERVICE_ACCOUNT_EMAIL,
@@ -77,11 +84,11 @@ async function rodar() {
 
             const doc = new GoogleSpreadsheet(SPREADSHEET_ID, serviceAccountAuth);
             await doc.loadInfo();
-            const sheet = doc.sheetsByIndex[0]; // Primeira aba
+            const sheet = doc.sheetsByIndex[0];
             await sheet.addRows(todos);
-            console.log("Sucesso! Planilha atualizada.");
+            console.log(`Sucesso! ${todos.length} linhas enviadas.`);
         } catch (error) {
-            console.error("Erro ao escrever no Sheets:", error.message);
+            console.error("Erro no Sheets:", error.message);
         }
     }
 }
