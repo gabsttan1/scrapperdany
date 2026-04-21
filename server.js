@@ -72,7 +72,8 @@ async function scrapeBichoCerto(loteriaInfo) {
                         loteria: nome, 
                         horario: horario, 
                         posicao: posicao,
-                        milhar: String(milhar).padStart(4, '0'),
+                        // Adicionamos o apóstrofo aqui para forçar o formato de texto no Sheets
+                        milhar: "'" + String(milhar).padStart(4, '0'), 
                         grupo: parseInt(grupo), 
                         bicho: bicho,
                         data_sorteio: dataHoje 
@@ -107,7 +108,7 @@ async function rodar() {
             await doc.loadInfo();
             const sheet = doc.sheetsByIndex[0];
             await sheet.addRows(todos);
-            console.log("SUCESSO: Dados salvos na planilha!");
+            console.log("SUCESSO: Dados salvos!");
         }
     } catch (e) { console.error("Erro final:", e.message); }
 }
