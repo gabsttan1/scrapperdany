@@ -4,6 +4,7 @@
   "main": "server.js",
   "dependencies": {
     "cheerio": "^1.0.0",
+    "dotenv": "^16.4.5",
     "google-auth-library": "^9.10.0",
     "google-spreadsheet": "^4.1.1",
     "puppeteer": "^22.10.0"
