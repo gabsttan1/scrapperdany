@@ -35,16 +35,15 @@ async function scrapeBichoCerto(loteriaInfo) {
         const results = [];
         const dataHoje = new Date().toISOString().split('T')[0];
 
-        // O segredo aqui é iterar sobre cada bloco que contém um horário e uma tabela
-        // Ajustei para buscar blocos de resultados (cards)
-        $('.result-card, .result-item, .card').each((index, block) => {
-            const titulo = $(block).find('h3, h5, .card-header').text().trim();
-            // Tenta achar um horário no título (ex: "10:30" ou "14h")
+        // Procura os cards que contêm as tabelas
+        $('.result-card, .result-item, .card, table').each((index, block) => {
+            // Tenta pegar o horário se existir no título ou linha anterior
+            const titulo = $(block).find('h3, h5, .card-header').first().text().trim();
             const horarioMatch = titulo.match(/(\d{1,2}:\d{2})|(\d{1,2}h)/);
             const horario = horarioMatch ? horarioMatch[0] : "Principal";
 
-            $(block).find('tbody tr, .result-group-item').each((i, row) => {
-                const tds = $(row).find('td, div');
+            $(block).find('tr').each((i, row) => {
+                const tds = $(row).find('td');
                 if (tds.length < 3) return;
 
                 const posicao = $(tds[0]).text().trim();
@@ -55,7 +54,7 @@ async function scrapeBichoCerto(loteriaInfo) {
                 if (!isNaN(milhar) && milhar.length >= 3) {
                     results.push({ 
                         loteria: nome, 
-                        horario: horario, // Adicionado aqui
+                        horario: horario,
                         posicao: posicao,
                         milhar: milhar.padStart(4, '0'), 
                         grupo: grupo, 
@@ -98,6 +97,8 @@ async function rodar() {
         } catch (error) {
             console.error("Erro final ao salvar:", error.message);
         }
+    } else {
+        console.log("Nenhum dado encontrado para salvar.");
     }
 }
 rodar();
