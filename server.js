@@ -4,7 +4,7 @@ const { GoogleSpreadsheet } = require('google-spreadsheet');
 const { JWT } = require('google-auth-library');
 
 // CONFIGURAÇÃO
-const SPREADSHEET_ID = '1yh7an-SMWRbHSpRX1BzNnaarV1abfZeRXiAlNDN-nsk'; // COLOQUE O SEU ID AQUI
+const SPREADSHEET_ID = '1yh7an-SMWRbHSpRX1BzNnaarV1abfZeRXiAlNDN-nsk'; 
 const SERVICE_ACCOUNT_EMAIL = 'resultados-sheets@sheets-494017.iam.gserviceaccount.com';
 
 const loteriasParaScrapear = [
@@ -21,6 +21,7 @@ const loteriasParaScrapear = [
 
 async function scrapeBichoCerto(loteriaInfo) {
     const { nome, url } = loteriaInfo;
+    console.log(`--- Raspando: ${nome} ---`);
     let browser;
     try {
         browser = await puppeteer.launch({ headless: "new", args: ['--no-sandbox', '--disable-setuid-sandbox'] });
@@ -34,26 +35,29 @@ async function scrapeBichoCerto(loteriaInfo) {
         const results = [];
         const dataHoje = new Date().toISOString().split('T')[0];
 
-        // Procura tabelas de resultados
-        $('table').each((index, table) => {
-            $(table).find('tr').each((i, row) => {
-                const tds = $(row).find('td');
-                if (tds.length < 3) return; // Pula cabeçalhos ou linhas vazias
+        // O segredo aqui é iterar sobre cada bloco que contém um horário e uma tabela
+        // Ajustei para buscar blocos de resultados (cards)
+        $('.result-card, .result-item, .card').each((index, block) => {
+            const titulo = $(block).find('h3, h5, .card-header').text().trim();
+            // Tenta achar um horário no título (ex: "10:30" ou "14h")
+            const horarioMatch = titulo.match(/(\d{1,2}:\d{2})|(\d{1,2}h)/);
+            const horario = horarioMatch ? horarioMatch[0] : "Principal";
 
-                let posicao = $(tds[0]).text().trim();
-                let milhar = $(tds[1]).text().trim().replace('.', '');
-                let grupo = $(tds[2]).text().trim();
-                let bicho = tds.length > 3 ? $(tds[3]).text().trim() : "";
+            $(block).find('tbody tr, .result-group-item').each((i, row) => {
+                const tds = $(row).find('td, div');
+                if (tds.length < 3) return;
 
-                // Limpeza básica
-                milhar = milhar.padStart(4, '0');
-                
-                // Valida se é um resultado real
-                if (!isNaN(milhar) && milhar.length === 4) {
+                const posicao = $(tds[0]).text().trim();
+                const milhar = $(tds[1]).text().trim().replace('.', '');
+                const grupo = $(tds[2]).text().trim();
+                const bicho = tds.length > 3 ? $(tds[3]).text().trim() : "";
+
+                if (!isNaN(milhar) && milhar.length >= 3) {
                     results.push({ 
                         loteria: nome, 
-                        posicao: posicao, 
-                        milhar: milhar, 
+                        horario: horario, // Adicionado aqui
+                        posicao: posicao,
+                        milhar: milhar.padStart(4, '0'), 
                         grupo: grupo, 
                         bicho: bicho, 
                         data_sorteio: dataHoje 
@@ -61,8 +65,11 @@ async function scrapeBichoCerto(loteriaInfo) {
                 }
             });
         });
+        
+        console.log(`Encontramos ${results.length} resultados para ${nome}`);
         return results;
     } catch (e) {
+        console.error(`Erro ao raspar ${nome}: ${e.message}`);
         if (browser) await browser.close();
         return [];
     }
@@ -76,6 +83,7 @@ async function rodar() {
 
     if (todos.length > 0) {
         try {
+            console.log(`Salvando ${todos.length} linhas na planilha...`);
             const serviceAccountAuth = new JWT({
                 email: SERVICE_ACCOUNT_EMAIL,
                 key: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON).private_key,
@@ -86,9 +94,9 @@ async function rodar() {
             await doc.loadInfo();
             const sheet = doc.sheetsByIndex[0];
             await sheet.addRows(todos);
-            console.log(`Sucesso! ${todos.length} linhas enviadas.`);
+            console.log("Sucesso! Planilha atualizada.");
         } catch (error) {
-            console.error("Erro no Sheets:", error.message);
+            console.error("Erro final ao salvar:", error.message);
         }
     }
 }
