@@ -1,10 +1,7 @@
 require('dotenv').config();
 const cheerio = require('cheerio');
-const { createClient } = require('@supabase/supabase-js');
 const puppeteer = require('puppeteer');
 const axios = require('axios');
-
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 
 const loteriasParaScrapear = [
     { nome: 'LOOK', url: 'https://bichocerto.com/resultados/lk/look/' },
@@ -20,8 +17,6 @@ const loteriasParaScrapear = [
 
 async function scrapeBichoCerto(loteriaInfo) {
     const { nome, url } = loteriaInfo;
-    console.log(`[DEBUG] Iniciando raspagem: ${nome}`);
-    
     let browser;
     try {
         browser = await puppeteer.launch({ headless: "new", args: ['--no-sandbox', '--disable-setuid-sandbox'] });
@@ -49,21 +44,12 @@ async function scrapeBichoCerto(loteriaInfo) {
             });
 
             if (milhar !== "" && grupo !== "") {
-                results.push({ 
-                    loteria: nome, 
-                    horario: "N/A", 
-                    posicao, 
-                    milhar, 
-                    grupo: parseInt(grupo), 
-                    bicho, 
-                    data_sorteio: dataHoje 
-                });
+                results.push({ loteria: nome, horario: "N/A", posicao, milhar, grupo: parseInt(grupo), bicho, data_sorteio: dataHoje });
             }
         });
-        console.log(`[DEBUG] ${nome}: Capturou ${results.length} resultados.`);
         return results;
     } catch (e) {
-        console.error(`[ERRO] Ao processar ${nome}:`, e.message);
+        console.error(`[ERRO] ${nome}:`, e.message);
         if (browser) await browser.close();
         return [];
     }
@@ -77,24 +63,12 @@ async function rodar() {
         }
 
         if (todos.length > 0) {
-            console.log(`[DEBUG] Salvando ${todos.length} resultados no Supabase...`);
-            const { error } = await supabase.from('resultados').upsert(todos, { onConflict: 'loteria,horario,posicao,data_sorteio' });
-            
-            if (error) {
-                console.error("[ERRO SUPABASE]", error);
-            } else {
-                console.log("[DEBUG] Supabase salvo com sucesso!");
-            }
-
+            // Enviando direto para o Webhook do Make (que salvará na Planilha)
             const WEBHOOK = 'https://hook.us2.make.com/ee4umw7oa8p4hwgob4kqlpvqxy7bxdh4';
-            await axios.post(WEBHOOK, todos);
-            console.log("[DEBUG] Dados enviados para o Make.");
-        } else {
-            console.log("[DEBUG] Nenhum dado novo para salvar.");
+            await axios.post(WEBHOOK, { resultados: todos });
+            console.log("Sucesso! Dados enviados para o Make/Sheets.");
         }
-    } catch (e) { 
-        console.error("[ERRO FINAL]", e.message); 
-    }
+    } catch (e) { console.error(e.message); }
 }
 
 rodar();
