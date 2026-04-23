@@ -33,9 +33,8 @@ async function scrapeBichoCerto(loteriaInfo) {
 
         const $ = cheerio.load(html);
         const resultadosDaPagina = [];
-        const dataHoje = new Date().toISOString().split('T')[0];
+        const dataHoje = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
 
-        // Seleciona os blocos de resultados (os cards)
         $('div[id^="div_display_"]').each((index, container) => {
             const titulo = $(container).find('.card-title').first().text().trim();
             const horarioMatch = titulo.match(/(\d{1,2}:\d{2})/) || titulo.match(/(\d{1,2}h)/);
@@ -45,22 +44,32 @@ async function scrapeBichoCerto(loteriaInfo) {
                 const tds = $(row).find('td');
                 if (tds.length < 4) return;
 
-                const posicao = $(tds[0]).text().trim();
-                const milhar = $(tds[2]).find('a').text().trim().replace('.', '');
-                const grupo = $(tds[3]).text().trim();
-                const bicho = $(tds[4]).text().trim();
+                const posicaoRaw = $(tds[0]).text().trim();
+                const posicao = posicaoRaw.replace(/\D/g, ''); // Limpa pra pegar só o número
 
-                if (!isNaN(milhar) && milhar.length >= 3) {
-                    resultadosDaPagina.push({ 
-                        loteria: nome, 
-                        horario: horario, 
-                        posicao: posicao,
-                        // Apóstrofo força texto no Sheets, mantendo o zero inicial
-                        milhar: "'" + String(milhar).padStart(4, '0'), 
-                        grupo: parseInt(grupo), 
-                        bicho: bicho,
-                        data_sorteio: dataHoje 
-                    });
+                // FILTRO: Apenas 1º ao 7º prémio
+                if (['1', '2', '3', '4', '5', '6', '7'].includes(posicao)) {
+                    const milharRaw = $(tds[2]).find('a').text().trim().replace('.', '');
+                    const grupo = $(tds[3]).text().trim();
+                    const bicho = $(tds[4]).text().trim();
+
+                    if (!isNaN(milharRaw) && milharRaw.length >= 3) {
+                        // Regra: Se for 7º prémio, corta para 3 últimos dígitos
+                        let milharFinal = milharRaw.padStart(4, '0');
+                        if (posicao === '7' && milharFinal.length > 3) {
+                            milharFinal = milharFinal.slice(-3);
+                        }
+
+                        resultadosDaPagina.push({ 
+                            loteria: nome, 
+                            horario: horario, 
+                            posicao: posicao + 'º',
+                            milhar: "'" + milharFinal, // Apóstrofo força texto no Sheets
+                            grupo: parseInt(grupo), 
+                            bicho: bicho,
+                            data_sorteio: dataHoje 
+                        });
+                    }
                 }
             });
         });
@@ -73,7 +82,7 @@ async function scrapeBichoCerto(loteriaInfo) {
 }
 
 async function rodar() {
-    // --- Porteiro: Bloqueia execução antes das 07:50 ---
+    // Porteiro: Só roda a partir das 07:50 BR
     const dataHoraBrasil = new Date().toLocaleString("en-US", {timeZone: "America/Sao_Paulo"});
     const agora = new Date(dataHoraBrasil);
     const horaAgora = agora.getHours();
@@ -83,7 +92,6 @@ async function rodar() {
         console.log(`--- Script ignorado: Horário de descanso (${horaAgora}:${minutoAgora}) ---`);
         return;
     }
-    // ----------------------------------------------------
 
     try {
         let todos = [];
@@ -106,13 +114,11 @@ async function rodar() {
             await doc.loadInfo();
             const sheet = doc.sheetsByIndex[0];
             
-            // Pega as linhas existentes para filtrar duplicados
             const rows = await sheet.getRows();
             const existingKeys = new Set(rows.map(r => 
                 `${r.get('loteria')}-${r.get('horario')}-${r.get('posicao')}-${r.get('data_sorteio')}`
             ));
 
-            // Filtra o que é novo
             const toAdd = todos.filter(novo => {
                 const key = `${novo.loteria}-${novo.horario}-${novo.posicao}-${novo.data_sorteio}`;
                 return !existingKeys.has(key);
