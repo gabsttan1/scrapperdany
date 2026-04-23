@@ -33,7 +33,7 @@ async function scrapeBichoCerto(loteriaInfo) {
 
         const $ = cheerio.load(html);
         const resultadosDaPagina = [];
-        const dataHoje = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
+        const dataHoje = new Date().toISOString().split('T')[0];
 
         $('div[id^="div_display_"]').each((index, container) => {
             const titulo = $(container).find('.card-title').first().text().trim();
@@ -44,32 +44,22 @@ async function scrapeBichoCerto(loteriaInfo) {
                 const tds = $(row).find('td');
                 if (tds.length < 4) return;
 
-                const posicaoRaw = $(tds[0]).text().trim();
-                const posicao = posicaoRaw.replace(/\D/g, ''); // Limpa pra pegar só o número
+                const posicao = $(tds[0]).text().trim();
+                const milhar = $(tds[2]).find('a').text().trim().replace('.', '');
+                const grupo = $(tds[3]).text().trim();
+                const bicho = $(tds[4]).text().trim();
 
-                // FILTRO: Apenas 1º ao 7º prémio
-                if (['1', '2', '3', '4', '5', '6', '7'].includes(posicao)) {
-                    const milharRaw = $(tds[2]).find('a').text().trim().replace('.', '');
-                    const grupo = $(tds[3]).text().trim();
-                    const bicho = $(tds[4]).text().trim();
-
-                    if (!isNaN(milharRaw) && milharRaw.length >= 3) {
-                        // Regra: Se for 7º prémio, corta para 3 últimos dígitos
-                        let milharFinal = milharRaw.padStart(4, '0');
-                        if (posicao === '7' && milharFinal.length > 3) {
-                            milharFinal = milharFinal.slice(-3);
-                        }
-
-                        resultadosDaPagina.push({ 
-                            loteria: nome, 
-                            horario: horario, 
-                            posicao: posicao + 'º',
-                            milhar: "'" + milharFinal, // Apóstrofo força texto no Sheets
-                            grupo: parseInt(grupo), 
-                            bicho: bicho,
-                            data_sorteio: dataHoje 
-                        });
-                    }
+                if (!isNaN(milhar) && milhar.length >= 3) {
+                    resultadosDaPagina.push({ 
+                        loteria: nome, 
+                        horario: horario, 
+                        posicao: posicao,
+                        // Adiciona um apóstrofo (') para impedir que o Sheets apague o zero inicial
+                        milhar: "'" + milhar.padStart(4, '0'), 
+                        grupo: parseInt(grupo), 
+                        bicho: bicho,
+                        data_sorteio: dataHoje 
+                    });
                 }
             });
         });
@@ -82,28 +72,15 @@ async function scrapeBichoCerto(loteriaInfo) {
 }
 
 async function rodar() {
-    // Porteiro: Só roda a partir das 07:50 BR
-    const dataHoraBrasil = new Date().toLocaleString("en-US", {timeZone: "America/Sao_Paulo"});
-    const agora = new Date(dataHoraBrasil);
-    const horaAgora = agora.getHours();
-    const minutoAgora = agora.getMinutes();
-
-    if (horaAgora < 7 || (horaAgora === 7 && minutoAgora < 50)) {
-        console.log(`--- Script ignorado: Horário de descanso (${horaAgora}:${minutoAgora}) ---`);
-        return;
-    }
-
     try {
         let todos = [];
-        console.log("=== INICIANDO RASPAGEM ===");
+        console.log("=== INICIANDO ===");
         
         for (const l of loteriasParaScrapear) {
             todos.push(...await scrapeBichoCerto(l));
         }
 
         if (todos.length > 0) {
-            console.log(`Raspagem concluída. Total capturado: ${todos.length}. Verificando duplicados...`);
-            
             const serviceAccountAuth = new JWT({
                 email: SERVICE_ACCOUNT_EMAIL,
                 key: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON).private_key,
@@ -114,11 +91,13 @@ async function rodar() {
             await doc.loadInfo();
             const sheet = doc.sheetsByIndex[0];
             
+            // BUSCAR LINHAS EXISTENTES PARA EVITAR DUPLICADOS
             const rows = await sheet.getRows();
             const existingKeys = new Set(rows.map(r => 
                 `${r.get('loteria')}-${r.get('horario')}-${r.get('posicao')}-${r.get('data_sorteio')}`
             ));
 
+            // FILTRAR APENAS O QUE É NOVO
             const toAdd = todos.filter(novo => {
                 const key = `${novo.loteria}-${novo.horario}-${novo.posicao}-${novo.data_sorteio}`;
                 return !existingKeys.has(key);
@@ -126,15 +105,13 @@ async function rodar() {
 
             if (toAdd.length > 0) {
                 await sheet.addRows(toAdd);
-                console.log(`SUCESSO: ${toAdd.length} novos resultados adicionados.`);
+                console.log(`SUCESSO: ${toAdd.length} resultados novos adicionados.`);
             } else {
-                console.log("Nenhum dado novo encontrado (todos já estavam na planilha).");
+                console.log("Tudo atualizado! Nenhuma duplicata adicionada.");
             }
-        } else {
-            console.log("Nenhum resultado foi capturado nesta rodada.");
         }
     } catch (e) { 
-        console.error("Erro no processo rodar():", e.message); 
+        console.error("ERRO CRÍTICO:", e.message); 
     }
 }
 rodar();
