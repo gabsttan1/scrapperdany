@@ -73,6 +73,21 @@ async function scrapeBichoCerto(loteriaInfo) {
 }
 
 async function rodar() {
+    // --- ADICIONE ESTE BLOCO AQUI ---
+    const dataHoraBrasil = new Date().toLocaleString("en-US", {timeZone: "America/Sao_Paulo"});
+    const horaAgora = new Date(dataHoraBrasil).getHours();
+    const minutoAgora = new Date(dataHoraBrasil).getMinutes();
+
+    // Se a hora for menor que 7 OU (for 7 horas e o minuto for menor que 50)
+    if (horaAgora < 7 || (horaAgora === 7 && minutoAgora < 50)) {
+        console.log(`--- Script ignorado: Horário de descanso (${horaAgora}:${minutoAgora}) ---`);
+        return; // Para a execução aqui mesmo
+    }
+    // --------------------------------
+
+    try {
+        let todos = [];
+        // ... (resto do seu código original)
     try {
         let todos = [];
         for (const l of loteriasParaScrapear) {
