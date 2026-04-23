@@ -73,23 +73,22 @@ async function scrapeBichoCerto(loteriaInfo) {
 }
 
 async function rodar() {
-    // --- ADICIONE ESTE BLOCO AQUI ---
+    // --- Porteiro: Bloqueia execução antes das 07:50 ---
     const dataHoraBrasil = new Date().toLocaleString("en-US", {timeZone: "America/Sao_Paulo"});
-    const horaAgora = new Date(dataHoraBrasil).getHours();
-    const minutoAgora = new Date(dataHoraBrasil).getMinutes();
+    const agora = new Date(dataHoraBrasil);
+    const horaAgora = agora.getHours();
+    const minutoAgora = agora.getMinutes();
 
-    // Se a hora for menor que 7 OU (for 7 horas e o minuto for menor que 50)
     if (horaAgora < 7 || (horaAgora === 7 && minutoAgora < 50)) {
         console.log(`--- Script ignorado: Horário de descanso (${horaAgora}:${minutoAgora}) ---`);
-        return; // Para a execução aqui mesmo
+        return;
     }
-    // --------------------------------
+    // ----------------------------------------------------
 
     try {
         let todos = [];
-        // ... (resto do seu código original)
-    try {
-        let todos = [];
+        console.log("=== INICIANDO RASPAGEM ===");
+        
         for (const l of loteriasParaScrapear) {
             todos.push(...await scrapeBichoCerto(l));
         }
@@ -125,7 +124,11 @@ async function rodar() {
             } else {
                 console.log("Nenhum dado novo encontrado (todos já estavam na planilha).");
             }
+        } else {
+            console.log("Nenhum resultado foi capturado nesta rodada.");
         }
-    } catch (e) { console.error("Erro final:", e.message); }
+    } catch (e) { 
+        console.error("Erro no processo rodar():", e.message); 
+    }
 }
 rodar();
