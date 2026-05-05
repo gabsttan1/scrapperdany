@@ -33,10 +33,30 @@ async function scrapeBichoCerto(loteriaInfo) {
 
         const $ = cheerio.load(html);
         const resultadosDaPagina = [];
-        const dataHoje = new Date().toISOString().split('T')[0];
+        
+        // --- TRAVA DE DATA REAL (BRASÍLIA) ---
+        const dataHojeBrasil = new Intl.DateTimeFormat('fr-CA', { 
+            timeZone: 'America/Sao_Paulo', 
+            year: 'numeric', month: '2-digit', day: '2-digit' 
+        }).format(new Date());
 
         $('div[id^="div_display_"]').each((index, container) => {
             const titulo = $(container).find('.card-title').first().text().trim();
+            
+            // Tenta extrair a data que está escrita no card (ex: 05/05/2026)
+            const dataMatch = titulo.match(/(\d{2}\/\d{2}\/\d{4})/);
+            let dataDoSite = null;
+            if (dataMatch) {
+                const parts = dataMatch[0].split('/');
+                dataDoSite = `${parts[2]}-${parts[1]}-${parts[0]}`; // Converte para YYYY-MM-DD
+            }
+
+            // SEGURANÇA: Se a data do site não for a de hoje, ignoramos o bloco inteiro
+            if (dataDoSite && dataDoSite !== dataHojeBrasil) {
+                console.log(`  [PULADO] Data do site (${dataDoSite}) antiga. Hoje é ${dataHojeBrasil}`);
+                return;
+            }
+
             const horarioMatch = titulo.match(/(\d{1,2}:\d{2})/) || titulo.match(/(\d{1,2}h)/);
             const horario = horarioMatch ? horarioMatch[0].replace('h', ':00') : 'N/A';
 
@@ -44,22 +64,30 @@ async function scrapeBichoCerto(loteriaInfo) {
                 const tds = $(row).find('td');
                 if (tds.length < 4) return;
 
-                const posicao = $(tds[0]).text().trim();
-                const milhar = $(tds[2]).find('a').text().trim().replace('.', '');
-                const grupo = $(tds[3]).text().trim();
-                const bicho = $(tds[4]).text().trim();
+                const posicaoRaw = $(tds[0]).text().trim();
+                const posicao = posicaoRaw.replace(/\D/g, ''); 
 
-                if (!isNaN(milhar) && milhar.length >= 3) {
-                    resultadosDaPagina.push({ 
-                        loteria: nome, 
-                        horario: horario, 
-                        posicao: posicao,
-                        // Adiciona um apóstrofo (') para impedir que o Sheets apague o zero inicial
-                        milhar: "'" + milhar.padStart(4, '0'), 
-                        grupo: parseInt(grupo), 
-                        bicho: bicho,
-                        data_sorteio: dataHoje 
-                    });
+                if (['1', '2', '3', '4', '5', '6', '7'].includes(posicao)) {
+                    const milharRaw = $(tds[2]).find('a').text().trim().replace('.', '');
+                    const grupo = $(tds[3]).text().trim();
+                    const bicho = $(tds[4]).text().trim();
+
+                    if (!isNaN(milharRaw) && milharRaw.length >= 3) {
+                        let milharFinal = milharRaw.padStart(4, '0');
+                        if (posicao === '7' && milharFinal.length > 3) {
+                            milharFinal = milharFinal.slice(-3);
+                        }
+
+                        resultadosDaPagina.push({ 
+                            loteria: nome, 
+                            horario: horario, 
+                            posicao: posicao + 'º',
+                            milhar: "'" + milharFinal, 
+                            grupo: parseInt(grupo), 
+                            bicho: bicho,
+                            data_sorteio: dataHojeBrasil 
+                        });
+                    }
                 }
             });
         });
@@ -72,9 +100,20 @@ async function scrapeBichoCerto(loteriaInfo) {
 }
 
 async function rodar() {
+    const dataHoraBrasil = new Date().toLocaleString("en-US", {timeZone: "America/Sao_Paulo"});
+    const agora = new Date(dataHoraBrasil);
+    const horaAgora = agora.getHours();
+    const minutoAgora = agora.getMinutes();
+
+    // Porteiro de Horário
+    if (horaAgora < 7 || (horaAgora === 7 && minutoAgora < 50)) {
+        console.log(`--- Script ignorado: Horário de descanso (${horaAgora}:${minutoAgora}) ---`);
+        return;
+    }
+
     try {
         let todos = [];
-        console.log("=== INICIANDO ===");
+        console.log("=== INICIANDO RASPAGEM SEGURA ===");
         
         for (const l of loteriasParaScrapear) {
             todos.push(...await scrapeBichoCerto(l));
@@ -91,13 +130,11 @@ async function rodar() {
             await doc.loadInfo();
             const sheet = doc.sheetsByIndex[0];
             
-            // BUSCAR LINHAS EXISTENTES PARA EVITAR DUPLICADOS
             const rows = await sheet.getRows();
             const existingKeys = new Set(rows.map(r => 
                 `${r.get('loteria')}-${r.get('horario')}-${r.get('posicao')}-${r.get('data_sorteio')}`
             ));
 
-            // FILTRAR APENAS O QUE É NOVO
             const toAdd = todos.filter(novo => {
                 const key = `${novo.loteria}-${novo.horario}-${novo.posicao}-${novo.data_sorteio}`;
                 return !existingKeys.has(key);
@@ -105,13 +142,15 @@ async function rodar() {
 
             if (toAdd.length > 0) {
                 await sheet.addRows(toAdd);
-                console.log(`SUCESSO: ${toAdd.length} resultados novos adicionados.`);
+                console.log(`SUCESSO: ${toAdd.length} novos resultados adicionados.`);
             } else {
-                console.log("Tudo atualizado! Nenhuma duplicata adicionada.");
+                console.log("Nenhum dado novo encontrado (ou datas não batem com hoje).");
             }
+        } else {
+            console.log("Nenhum resultado capturado ou o site ainda está com dados antigos.");
         }
     } catch (e) { 
-        console.error("ERRO CRÍTICO:", e.message); 
+        console.error("Erro no processo rodar():", e.message); 
     }
 }
 rodar();
