@@ -17,6 +17,11 @@ const loteriasParaScrapear = [
     { nome: 'RIO', url: 'https://bichocerto.com/resultados/rj/para-todos/' },
     { nome: 'SP/BAND', url: 'https://bichocerto.com/resultados/sp/pt-band/' },
     { nome: 'NACIONAL', url: 'https://bichocerto.com/resultados/ln/loteria-nacional/' }
+    { nome: 'BOA SORTE', url: 'https://bichocerto.com/resultados/bs/boa-sorte/' },
+    { nome: 'MINAS', url: 'https://bichocerto.com/resultados/mg/minas-gerais/' },
+    { nome: 'BAHIA', url: 'https://bichocerto.com/resultados/ba/para-todos/' },
+    { nome: 'POPULAR RECIFE', url: 'https://bichocerto.com/resultados/lp/loteria-popular/' },
+    { nome: 'AVAL', url: 'https://bichocerto.com/resultados/av/aval/' }
 ];
 
 async function scrapeBichoCerto(loteriaInfo) {
