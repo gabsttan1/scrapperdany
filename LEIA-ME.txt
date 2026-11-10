@@ -1,0 +1,18 @@
+LOTTO TRIVO - uso exclusivo do Buscador Dany
+
+Enviar ao repositorio gabsttan1/scrapperdany:
+- coletor_lottotrivo.py (raiz)
+- .github/workflows/lottotrivo.yml (criar pasta/nome exatos)
+- resultado/lottotrivo_historico.json (historico inicial de 15 sorteios)
+- resultado/lottotrivo_atrasados.json (ranking inicial)
+
+Nao substitua server.js e nao altere o workflow scrape.yml.
+
+Ative o workflow "Coletar LottoTrivo - Buscador Dany" na aba Actions com Run workflow.
+Permita gravacao pelo workflow em Settings > Actions > General > Workflow permissions > Read and write permissions (caso necessario).
+
+Dados futuros disponiveis em:
+https://raw.githubusercontent.com/gabsttan1/scrapperdany/main/resultado/lottotrivo_historico.json
+https://raw.githubusercontent.com/gabsttan1/scrapperdany/main/resultado/lottotrivo_atrasados.json
+
+Observacao: o app Buscador Dany precisa ser alterado para consumir este historico JSON e listar a banca LottoTrivo. Nao misturar resultados LottoTrivo com a planilha do site principal.
