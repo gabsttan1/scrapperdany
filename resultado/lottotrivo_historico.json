@@ -1,9 +1,9 @@
 {
   "banca": "LottoTrivo",
-  "total_sorteios": 72,
+  "total_sorteios": 77,
   "primeiro_sorteio": "2026-11-09T01:30:00-03:00",
-  "ultimo_sorteio": "2026-11-16T05:30:00-03:00",
-  "atualizado_em": "2026-11-16T06:33:35-03:00",
+  "ultimo_sorteio": "2026-11-16T15:30:00-03:00",
+  "atualizado_em": "2026-11-16T16:51:15-03:00",
   "falhas": [],
   "draws": [
     {
@@ -4107,6 +4107,291 @@
           "posicao": 10,
           "numero": "1958",
           "grupo": "15"
+        }
+      ]
+    },
+    {
+      "id": "20261116073000",
+      "datetime": "2026-11-16T07:30:00-03:00",
+      "horario": "07:30",
+      "premios": [
+        {
+          "posicao": 1,
+          "numero": "8196",
+          "grupo": "24"
+        },
+        {
+          "posicao": 2,
+          "numero": "5880",
+          "grupo": "20"
+        },
+        {
+          "posicao": 3,
+          "numero": "7760",
+          "grupo": "15"
+        },
+        {
+          "posicao": 4,
+          "numero": "8793",
+          "grupo": "24"
+        },
+        {
+          "posicao": 5,
+          "numero": "6811",
+          "grupo": "03"
+        },
+        {
+          "posicao": 6,
+          "numero": "9833",
+          "grupo": "09"
+        },
+        {
+          "posicao": 7,
+          "numero": "5520",
+          "grupo": "05"
+        },
+        {
+          "posicao": 8,
+          "numero": "3122",
+          "grupo": "06"
+        },
+        {
+          "posicao": 9,
+          "numero": "3907",
+          "grupo": "02"
+        },
+        {
+          "posicao": 10,
+          "numero": "8968",
+          "grupo": "17"
+        }
+      ]
+    },
+    {
+      "id": "20261116093000",
+      "datetime": "2026-11-16T09:30:00-03:00",
+      "horario": "09:30",
+      "premios": [
+        {
+          "posicao": 1,
+          "numero": "6947",
+          "grupo": "12"
+        },
+        {
+          "posicao": 2,
+          "numero": "1001",
+          "grupo": "01"
+        },
+        {
+          "posicao": 3,
+          "numero": "8158",
+          "grupo": "15"
+        },
+        {
+          "posicao": 4,
+          "numero": "8478",
+          "grupo": "20"
+        },
+        {
+          "posicao": 5,
+          "numero": "7245",
+          "grupo": "12"
+        },
+        {
+          "posicao": 6,
+          "numero": "3714",
+          "grupo": "04"
+        },
+        {
+          "posicao": 7,
+          "numero": "6845",
+          "grupo": "12"
+        },
+        {
+          "posicao": 8,
+          "numero": "3004",
+          "grupo": "01"
+        },
+        {
+          "posicao": 9,
+          "numero": "9539",
+          "grupo": "10"
+        },
+        {
+          "posicao": 10,
+          "numero": "4803",
+          "grupo": "01"
+        }
+      ]
+    },
+    {
+      "id": "20261116113000",
+      "datetime": "2026-11-16T11:30:00-03:00",
+      "horario": "11:30",
+      "premios": [
+        {
+          "posicao": 1,
+          "numero": "7014",
+          "grupo": "04"
+        },
+        {
+          "posicao": 2,
+          "numero": "8561",
+          "grupo": "16"
+        },
+        {
+          "posicao": 3,
+          "numero": "7541",
+          "grupo": "11"
+        },
+        {
+          "posicao": 4,
+          "numero": "6161",
+          "grupo": "16"
+        },
+        {
+          "posicao": 5,
+          "numero": "7800",
+          "grupo": "25"
+        },
+        {
+          "posicao": 6,
+          "numero": "3629",
+          "grupo": "08"
+        },
+        {
+          "posicao": 7,
+          "numero": "4921",
+          "grupo": "06"
+        },
+        {
+          "posicao": 8,
+          "numero": "0076",
+          "grupo": "19"
+        },
+        {
+          "posicao": 9,
+          "numero": "5060",
+          "grupo": "15"
+        },
+        {
+          "posicao": 10,
+          "numero": "1119",
+          "grupo": "05"
+        }
+      ]
+    },
+    {
+      "id": "20261116133000",
+      "datetime": "2026-11-16T13:30:00-03:00",
+      "horario": "13:30",
+      "premios": [
+        {
+          "posicao": 1,
+          "numero": "7720",
+          "grupo": "05"
+        },
+        {
+          "posicao": 2,
+          "numero": "5737",
+          "grupo": "10"
+        },
+        {
+          "posicao": 3,
+          "numero": "0915",
+          "grupo": "04"
+        },
+        {
+          "posicao": 4,
+          "numero": "9145",
+          "grupo": "12"
+        },
+        {
+          "posicao": 5,
+          "numero": "9257",
+          "grupo": "15"
+        },
+        {
+          "posicao": 6,
+          "numero": "5325",
+          "grupo": "07"
+        },
+        {
+          "posicao": 7,
+          "numero": "0263",
+          "grupo": "16"
+        },
+        {
+          "posicao": 8,
+          "numero": "2859",
+          "grupo": "15"
+        },
+        {
+          "posicao": 9,
+          "numero": "5050",
+          "grupo": "13"
+        },
+        {
+          "posicao": 10,
+          "numero": "5298",
+          "grupo": "25"
+        }
+      ]
+    },
+    {
+      "id": "20261116153000",
+      "datetime": "2026-11-16T15:30:00-03:00",
+      "horario": "15:30",
+      "premios": [
+        {
+          "posicao": 1,
+          "numero": "2965",
+          "grupo": "17"
+        },
+        {
+          "posicao": 2,
+          "numero": "1740",
+          "grupo": "10"
+        },
+        {
+          "posicao": 3,
+          "numero": "2060",
+          "grupo": "15"
+        },
+        {
+          "posicao": 4,
+          "numero": "0781",
+          "grupo": "21"
+        },
+        {
+          "posicao": 5,
+          "numero": "6983",
+          "grupo": "21"
+        },
+        {
+          "posicao": 6,
+          "numero": "5678",
+          "grupo": "20"
+        },
+        {
+          "posicao": 7,
+          "numero": "8723",
+          "grupo": "06"
+        },
+        {
+          "posicao": 8,
+          "numero": "0321",
+          "grupo": "06"
+        },
+        {
+          "posicao": 9,
+          "numero": "6205",
+          "grupo": "02"
+        },
+        {
+          "posicao": 10,
+          "numero": "8376",
+          "grupo": "19"
         }
       ]
     }
