@@ -1,9 +1,9 @@
 {
   "banca": "LottoTrivo",
-  "total_sorteios": 77,
+  "total_sorteios": 80,
   "primeiro_sorteio": "2026-11-09T01:30:00-03:00",
-  "ultimo_sorteio": "2026-11-16T15:30:00-03:00",
-  "atualizado_em": "2026-11-16T16:51:15-03:00",
+  "ultimo_sorteio": "2026-11-16T22:30:00-03:00",
+  "atualizado_em": "2026-11-16T23:54:19-03:00",
   "falhas": [],
   "draws": [
     {
@@ -4392,6 +4392,177 @@
           "posicao": 10,
           "numero": "8376",
           "grupo": "19"
+        }
+      ]
+    },
+    {
+      "id": "20261116183000",
+      "datetime": "2026-11-16T18:30:00-03:00",
+      "horario": "18:30",
+      "premios": [
+        {
+          "posicao": 1,
+          "numero": "8918",
+          "grupo": "05"
+        },
+        {
+          "posicao": 2,
+          "numero": "9486",
+          "grupo": "22"
+        },
+        {
+          "posicao": 3,
+          "numero": "8811",
+          "grupo": "03"
+        },
+        {
+          "posicao": 4,
+          "numero": "5872",
+          "grupo": "18"
+        },
+        {
+          "posicao": 5,
+          "numero": "5139",
+          "grupo": "10"
+        },
+        {
+          "posicao": 6,
+          "numero": "7582",
+          "grupo": "21"
+        },
+        {
+          "posicao": 7,
+          "numero": "3358",
+          "grupo": "15"
+        },
+        {
+          "posicao": 8,
+          "numero": "1906",
+          "grupo": "02"
+        },
+        {
+          "posicao": 9,
+          "numero": "3069",
+          "grupo": "18"
+        },
+        {
+          "posicao": 10,
+          "numero": "1348",
+          "grupo": "12"
+        }
+      ]
+    },
+    {
+      "id": "20261116203000",
+      "datetime": "2026-11-16T20:30:00-03:00",
+      "horario": "20:30",
+      "premios": [
+        {
+          "posicao": 1,
+          "numero": "4137",
+          "grupo": "10"
+        },
+        {
+          "posicao": 2,
+          "numero": "2737",
+          "grupo": "10"
+        },
+        {
+          "posicao": 3,
+          "numero": "4313",
+          "grupo": "04"
+        },
+        {
+          "posicao": 4,
+          "numero": "8014",
+          "grupo": "04"
+        },
+        {
+          "posicao": 5,
+          "numero": "6306",
+          "grupo": "02"
+        },
+        {
+          "posicao": 6,
+          "numero": "1897",
+          "grupo": "25"
+        },
+        {
+          "posicao": 7,
+          "numero": "5114",
+          "grupo": "04"
+        },
+        {
+          "posicao": 8,
+          "numero": "2951",
+          "grupo": "13"
+        },
+        {
+          "posicao": 9,
+          "numero": "5955",
+          "grupo": "14"
+        },
+        {
+          "posicao": 10,
+          "numero": "2304",
+          "grupo": "01"
+        }
+      ]
+    },
+    {
+      "id": "20261116223000",
+      "datetime": "2026-11-16T22:30:00-03:00",
+      "horario": "22:30",
+      "premios": [
+        {
+          "posicao": 1,
+          "numero": "6510",
+          "grupo": "03"
+        },
+        {
+          "posicao": 2,
+          "numero": "9209",
+          "grupo": "03"
+        },
+        {
+          "posicao": 3,
+          "numero": "4108",
+          "grupo": "02"
+        },
+        {
+          "posicao": 4,
+          "numero": "0378",
+          "grupo": "20"
+        },
+        {
+          "posicao": 5,
+          "numero": "5461",
+          "grupo": "16"
+        },
+        {
+          "posicao": 6,
+          "numero": "0413",
+          "grupo": "04"
+        },
+        {
+          "posicao": 7,
+          "numero": "8864",
+          "grupo": "16"
+        },
+        {
+          "posicao": 8,
+          "numero": "0974",
+          "grupo": "19"
+        },
+        {
+          "posicao": 9,
+          "numero": "1934",
+          "grupo": "09"
+        },
+        {
+          "posicao": 10,
+          "numero": "7359",
+          "grupo": "15"
         }
       ]
     }
