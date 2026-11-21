@@ -1,9 +1,9 @@
 {
   "banca": "LottoTrivo",
-  "total_sorteios": 118,
+  "total_sorteios": 120,
   "primeiro_sorteio": "2026-11-09T01:30:00-03:00",
-  "ultimo_sorteio": "2026-11-20T18:30:00-03:00",
-  "atualizado_em": "2026-11-20T20:20:38-03:00",
+  "ultimo_sorteio": "2026-11-20T22:30:00-03:00",
+  "atualizado_em": "2026-11-21T01:15:59-03:00",
   "falhas": [],
   "draws": [
     {
@@ -6729,6 +6729,120 @@
           "posicao": 10,
           "numero": "2703",
           "grupo": "01"
+        }
+      ]
+    },
+    {
+      "id": "20261120203000",
+      "datetime": "2026-11-20T20:30:00-03:00",
+      "horario": "20:30",
+      "premios": [
+        {
+          "posicao": 1,
+          "numero": "6275",
+          "grupo": "19"
+        },
+        {
+          "posicao": 2,
+          "numero": "4357",
+          "grupo": "15"
+        },
+        {
+          "posicao": 3,
+          "numero": "8521",
+          "grupo": "06"
+        },
+        {
+          "posicao": 4,
+          "numero": "1229",
+          "grupo": "08"
+        },
+        {
+          "posicao": 5,
+          "numero": "8008",
+          "grupo": "02"
+        },
+        {
+          "posicao": 6,
+          "numero": "6315",
+          "grupo": "04"
+        },
+        {
+          "posicao": 7,
+          "numero": "8093",
+          "grupo": "24"
+        },
+        {
+          "posicao": 8,
+          "numero": "7601",
+          "grupo": "01"
+        },
+        {
+          "posicao": 9,
+          "numero": "4489",
+          "grupo": "23"
+        },
+        {
+          "posicao": 10,
+          "numero": "0289",
+          "grupo": "23"
+        }
+      ]
+    },
+    {
+      "id": "20261120223000",
+      "datetime": "2026-11-20T22:30:00-03:00",
+      "horario": "22:30",
+      "premios": [
+        {
+          "posicao": 1,
+          "numero": "8416",
+          "grupo": "04"
+        },
+        {
+          "posicao": 2,
+          "numero": "4183",
+          "grupo": "21"
+        },
+        {
+          "posicao": 3,
+          "numero": "3589",
+          "grupo": "23"
+        },
+        {
+          "posicao": 4,
+          "numero": "9817",
+          "grupo": "05"
+        },
+        {
+          "posicao": 5,
+          "numero": "8949",
+          "grupo": "13"
+        },
+        {
+          "posicao": 6,
+          "numero": "7126",
+          "grupo": "07"
+        },
+        {
+          "posicao": 7,
+          "numero": "2707",
+          "grupo": "02"
+        },
+        {
+          "posicao": 8,
+          "numero": "2569",
+          "grupo": "18"
+        },
+        {
+          "posicao": 9,
+          "numero": "0333",
+          "grupo": "09"
+        },
+        {
+          "posicao": 10,
+          "numero": "3489",
+          "grupo": "23"
         }
       ]
     }
